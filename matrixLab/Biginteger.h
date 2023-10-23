@@ -1,6 +1,3 @@
-#pragma once
-#define discharge 4294967296
-
 #include <cstring>
 #include <iostream>
 #include <string>
@@ -8,13 +5,18 @@
 class BigInteger {
 private:
 	bool sign_;
-	unsigned int* number_;
+	unsigned int* number_ = nullptr;
 	int size_;
 
+	void swap(BigInteger& other) {
+		std::swap(this->number_, other.number_);
+		std::swap(this->sign_, other.sign_);
+		std::swap(this->size_, other.size_);
+	}
 public:
-	const bool sign() { return sign_; }
-	const unsigned int* numbers() { return number_; }
-	const int size() { return size_; }
+	bool sign() const { return sign_; }
+	unsigned int* numbers() const { return number_; }
+	int size() const { return size_; }
 	BigInteger();
 	BigInteger(long long num);
 	explicit BigInteger(const std::string& str);
@@ -43,17 +45,21 @@ public:
 	BigInteger& operator--();
 	BigInteger operator--(int);
 
-	BigInteger abs(const BigInteger& num);
+	static BigInteger abs(const BigInteger& num);
 
 	friend std::string to_string(const BigInteger& num);
+
+	~BigInteger() {
+		delete[] number_;
+	}
 };
 
 std::ostream& operator<<(std::ostream& output, BigInteger& other);
 
-BigInteger operator+(const BigInteger left, const BigInteger right);
-BigInteger operator-(const BigInteger left, const BigInteger right);
-BigInteger operator*(const BigInteger left, const BigInteger right);
-BigInteger operator/(const BigInteger left, const BigInteger right);
-BigInteger operator%(const BigInteger left, const BigInteger right);
+BigInteger operator+(BigInteger left, BigInteger const & right);
+BigInteger operator-(BigInteger left, BigInteger const & right);
+BigInteger operator*(BigInteger left, BigInteger const & right);
+BigInteger operator/(BigInteger left, BigInteger const & right);
+BigInteger operator%(BigInteger left, BigInteger const & right);
 
-bool operator==(const BigInteger left, const BigInteger right);
+bool operator==(BigInteger const & left, BigInteger const & right);

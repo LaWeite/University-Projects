@@ -1,12 +1,15 @@
 #include "Rationalnumbers.h"
 
 BigInteger greatest_common_divisor(BigInteger left, BigInteger right) {
-	if (left % right == 0)
+	if (left % right == 0) {
 		return right;
-	if (right % left == 0)
+	}
+	if (right % left == 0) {
 		return left;
-	if (left > right)
+	}
+	if (left > right) {
 		return greatest_common_divisor(left % right, right);
+	}
 	return greatest_common_divisor(left, right % left);
 }
 
@@ -32,7 +35,7 @@ Rational::Rational() : numerator_(0), denominator_(1) {}
 
 Rational::Rational(int i) : numerator_(i), denominator_(1) {}
 
-Rational::Rational(BigInteger numerator, BigInteger denomenator) : numerator_(numerator), denominator_(denomenator) {}
+Rational::Rational(BigInteger numerator, BigInteger denomenator) : numerator_(std::move(numerator)), denominator_(std::move(denomenator)) {}
 
 Rational::Rational(const Rational& other) {
 	numerator_ = other.numerator_;
@@ -40,38 +43,27 @@ Rational::Rational(const Rational& other) {
 }
 
 Rational::Rational(Rational&& other) noexcept {
-	numerator_ = other.numerator_;
-	denominator_ = other.denominator_;
-	other.numerator_ = 0;
-	other.denominator_ = 1;
+	this->swap(other);
 }
 
 Rational& Rational::operator=(const Rational& other) {
-	numerator_ = other.numerator_;
-	denominator_ = other.denominator_;
+	if (this != &other) {
+		Rational tmp(other);
+		this->swap(tmp);
+	}
 
 	return *this;
 }
 
 Rational& Rational::operator=(Rational&& other) noexcept {
-	if ((numerator_ != other.numerator_) || (denominator_ != other.denominator_))
-	{
-		numerator_ = other.numerator_;
-		denominator_ = other.denominator_;
-		other.denominator_ = 1;
-		other.numerator_ = 0;
+	if (this != &other) {
+		this->swap(other);
 	}
-
 	return *this;
 }
 
 bool operator==(Rational left, Rational right) {
-	if (left.numerator() == right.numerator() && left.denominator() == right.denominator())
-	{
-		return true;
-	}
-
-	return false;
+	return (left.numerator() == right.numerator() && left.denominator() == right.denominator());
 }
 
 bool Rational::operator!=(const Rational& other) const {
@@ -245,19 +237,19 @@ Rational& Rational::operator/=(const Rational& other) {
 	return *this;
 }
 
-Rational operator+(Rational left, Rational right) {
+Rational operator+(Rational left, Rational const & right) {
 	return left += right;
 }
 
-Rational operator-(Rational left, Rational right) {
+Rational operator-(Rational left, Rational const & right) {
 	return left -= right;
 }
 
-Rational operator*(Rational left, Rational right) {
+Rational operator*(Rational left, Rational const & right) {
 	return left *= right;
 }
 
-Rational operator/(Rational left, Rational right) {
+Rational operator/(Rational left, Rational const & right) {
 	return left /= right;
 }
 

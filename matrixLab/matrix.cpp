@@ -30,38 +30,25 @@ Matrix::Matrix(const Matrix& other) : n_(other.n_), m_(other.m_) {
 Matrix::Matrix(Rational number) {
 	n_ = 1;
 	m_ = 1;
-
 	matrix_ = new Rational * [n_];
 	for (int i = 0; i < n_; ++i)
 	{
 		matrix_[i] = new Rational[m_];
 	}
 
-	matrix_[0][0] = number;
+	matrix_[0][0] = std::move(number);
 }
 
 Matrix& Matrix::operator=(const Matrix& other) {
-	n_ = other.n_;
-	m_ = other.m_;
-
-	matrix_ = new Rational * [other.n_];
-	for (int i = 0; i < other.n_; ++i)
-	{
-		matrix_[i] = new Rational[other.m_];
-	}
-
-	for (int rows = 0; rows < n_; ++rows)
-	{
-		for (int columns = 0; columns < m_; ++columns)
-		{
-			matrix_[rows][columns] = other.matrix_[rows][columns];
-		}
+	if (this != &other) {
+		Matrix tmp(other);
+		this->swap(tmp);
 	}
 
 	return *this;
 }
 
-bool operator==(Matrix left, Matrix right) {
+bool operator==(Matrix const & left, Matrix const & right) {
 	if ((left.n_ != right.n_) || (left.m_ != right.n_))
 	{
 		return false;
@@ -159,11 +146,11 @@ Matrix& Matrix::operator/=(const Matrix& other) {
 	return *this;
 }
 
-Matrix operator+(Matrix left, Matrix right) {
+Matrix operator+(Matrix left, Matrix const & right) {
 	return left += right;
 }
 
-Matrix operator-(Matrix left, Matrix right) {
+Matrix operator-(Matrix left, Matrix const & right) {
 	return left -= right;
 }
 
@@ -176,15 +163,19 @@ Matrix operator*(Matrix left, Matrix right) {
 	return left *= right;
 }
 
-Matrix operator/(Matrix left, Matrix right) {
+Matrix operator/(Matrix left, Matrix const & right) {
 	return left /= right;
 }
 
-Matrix matrix_prod(Matrix left, Matrix right) {
+Matrix matrix_prod(Matrix const & left, Matrix const & right) {
 	Matrix result;
+	for (int i = 0; i < result.n_; ++i) {
+		delete[] result.matrix_[i];
+	}
 	result.n_ = left.n_;
 	result.m_ = right.m_;
 
+	delete[] result.matrix_;
 	result.matrix_ = new Rational* [result.n_];
 	for (int i = 0; i < result.n_; ++i)
 	{
@@ -278,9 +269,13 @@ void linspace(Matrix& matrix, int x0, int x1, int n) {
 
 Matrix vertcat(Matrix& left, Matrix& right) {
 	Matrix result;
+	for (int i = 0; i < result.n_; ++i) {
+		delete[] result.matrix_[i];
+	}
 	result.n_ = left.n_ + right.n_;
 	result.m_ = left.m_;
 
+	delete[] result.matrix_;
 	result.matrix_ = new Rational * [result.n_];
 	for (int i = 0; i < result.n_; ++i)
 	{
@@ -306,9 +301,13 @@ Matrix vertcat(Matrix& left, Matrix& right) {
 
 Matrix horzcat(Matrix& left, Matrix& right) {
 	Matrix result;
+	for (int i = 0; i < result.n_; ++i) {
+		delete[] result.matrix_[i];
+	}
 	result.n_ = left.n_;
 	result.m_ = left.m_ + right.m_;
 
+	delete[] result.matrix_;
 	result.matrix_ = new Rational* [result.n_];
 	for (int i = 0; i < result.n_; ++i)
 	{
@@ -334,9 +333,13 @@ Matrix horzcat(Matrix& left, Matrix& right) {
 
 Matrix transpose(Matrix& matrix) {
 	Matrix matrix_new;
+	for (int i = 0; i < matrix_new.n_; ++i) {
+		delete[] matrix_new.matrix_[i];
+	}
 	matrix_new.m_ = matrix.n_;
 	matrix_new.n_ = matrix.m_;
 
+	delete[] matrix_new.matrix_;
 	matrix_new.matrix_ = new Rational * [matrix_new.n_];
 	for (int i = 0; i < matrix_new.n_; ++i)
 	{
@@ -419,9 +422,9 @@ Rational determinant_of_matrix_with_LU(Matrix& matrix, Rational* p, int size) {
 	{
 		return determinant;
 	}
-	else {
-		return -determinant;
-	}
+
+	return -determinant;
+
 }
 
 Rational det(Matrix& matrix) {
@@ -433,6 +436,7 @@ Rational det(Matrix& matrix) {
 
 	result = determinant_of_matrix_with_LU(matrix, p, matrix.n_);
 
+	delete[] p;
 	return result;
 }
 
@@ -458,10 +462,14 @@ void invert_matrix_with_LU(Matrix& matrix, const Rational* p, int size, Matrix& 
 
 Matrix inv(Matrix& matrix) {
 	Matrix result;
+	for (int i = 0; i < result.n_; ++i) {
+		delete[] result.matrix_[i];
+	}
 
 	result.n_ = matrix.n_;
 	result.m_ = matrix.m_;
 
+	delete[] result.matrix_;
 	result.matrix_ = new Rational * [result.n_];
 	for (int i = 0; i < result.n_; i++)
 	{
@@ -478,14 +486,20 @@ Matrix inv(Matrix& matrix) {
 
 	invert_matrix_with_LU(matrix, p, matrix.n_, result);
 
+	delete[] p;
+
 	return result;
 }
 
-Matrix matrix_del(Matrix left, Matrix right) {
+Matrix matrix_del(Matrix const & left, Matrix right) {
 	Matrix result;
+	for (int i = 0; i < result.n_; ++i) {
+		delete[] result.matrix_[i];
+	}
 	result.n_ = right.n_;
 	result.m_ = right.m_;
 
+	delete[] result.matrix_;
 	result.matrix_ = new Rational * [result.n_];
 	for (int i = 0; i < result.n_; ++i)
 	{
@@ -534,6 +548,7 @@ Matrix min(Matrix& left, Matrix& right) {
 	matrix_result.n_ = left.n_;
 	matrix_result.m_ = left.m_;
 
+	delete[] matrix_result.matrix_;
 	matrix_result.matrix_ = new Rational * [matrix_result.n_];
 	for (int i = 0; i < matrix_result.n_; i++)
 	{
@@ -562,6 +577,7 @@ Matrix max(Matrix& left, Matrix& right) {
 	matrix_result.n_ = left.n_;
 	matrix_result.m_ = left.m_;
 
+	delete[] matrix_result.matrix_;
 	matrix_result.matrix_ = new Rational * [matrix_result.n_];
 	for (int i = 0; i < matrix_result.n_; i++)
 	{
@@ -596,7 +612,7 @@ std::ostream& operator<<(std::ostream& output, Matrix& other) {
 			{
 				std::string numeratorStr = to_string(other.matrix_[i][columns].numerator());
 				std::string denominatorStr = to_string(other.matrix_[i][columns].denominator());
-				templength = numeratorStr.length() + denominatorStr.length();
+				templength = static_cast<int>(numeratorStr.length()) + static_cast<int>(denominatorStr.length());
 				if (other.matrix_[i][columns].denominator() != 1)
 				{
 					++templength;
@@ -616,7 +632,7 @@ std::ostream& operator<<(std::ostream& output, Matrix& other) {
 				output << other.matrix_[rows][columns];
 			}
 			else {
-				output << std::setw(length) << to_string(other.matrix_[rows][columns]);
+				output << std::setw(static_cast<int>(length)) << to_string(other.matrix_[rows][columns]);
 			}
 			if (columns != other.m_ - 1)
 			{

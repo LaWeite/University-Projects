@@ -7,6 +7,12 @@ public:
     int m_;
     Rational** matrix_;
 
+    void swap(Matrix& other) {
+		std::swap(this->n_, other.n_);
+		std::swap(this->m_, other.m_);
+		std::swap(this->matrix_, other.matrix_);
+	}
+
     Matrix();
     Matrix(const Matrix& other);
     Matrix(Rational number);
@@ -19,7 +25,7 @@ public:
     Matrix& operator-=(const Matrix& other);
     Matrix& operator*=(const Matrix& other);
     Matrix& operator/=(const Matrix& other);
-    operator int() {
+    operator int () const {
         int numerator = std::stoi(to_string(matrix_[0][0].numerator()));
 
         return numerator;
@@ -35,15 +41,15 @@ public:
     }
 };
 
-Matrix operator+(Matrix left, Matrix right);
-Matrix operator-(Matrix left, Matrix right);
+Matrix operator+(Matrix left, Matrix const & right);
+Matrix operator-(Matrix left, Matrix const & right);
 Matrix operator*(Matrix left, Matrix right);
-Matrix operator/(Matrix left, Matrix right);
+Matrix operator/(Matrix left, Matrix const & right);
 
-bool operator==(Matrix left, Matrix right);
+bool operator==(Matrix const &left, Matrix const & right);
 
-Matrix matrix_prod(Matrix left, Matrix right);
-Matrix matrix_del(Matrix left, Matrix right);
+Matrix matrix_prod(Matrix const & left, Matrix const & right);
+Matrix matrix_del(Matrix const & left, Matrix right);
 void zeros(Matrix& matr, int n, int m);
 void ones(Matrix& matr, int n, int m);
 void eye(Matrix& matrix, int n);

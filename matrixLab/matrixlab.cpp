@@ -36,8 +36,8 @@ bool IsOp(char c) {
 	}
 }
 
-Instructions _getInstructionsCode(std::string func) {
-	std::string temp = func;
+Instructions _getInstructionsCode(std::string const & func) {
+	std::string const & temp = func;
 	Instructions result = _UNKNOWN;
 	
 	if (temp == "disp") {
@@ -90,7 +90,7 @@ Instructions _getInstructionsCode(std::string func) {
 }
 
 bool _isNumber(char c) {
-	return isdigit(c);
+	return static_cast<bool>(isdigit(c));
 }
 
 int main(int argc, char*argv[]) {
@@ -103,16 +103,21 @@ int main(int argc, char*argv[]) {
 	std::string name;
 	char operand = '\0';
 	
-	Matrix left, right, result;
-	int n, m, x0, x1;
+	Matrix left;
+	Matrix right;
+	Matrix result;
+	int n;
+	int m;
+	int x0;
+	int x1;
 	int count_string = 0;
 	while (std::getline(input, str))
 	{
 		try {
 
-			for (int i = str.length() - 1; i >= 0; --i)
+			for (int i = static_cast<int>(str.length()) - 1; i >= 0; --i)
 			{
-				while (isspace(str[i])) {
+				while (static_cast<bool>(isspace(str[i]))) {
 					--i;
 				}
 
@@ -121,14 +126,14 @@ int main(int argc, char*argv[]) {
 					--i;
 					continue;
 				}
-				else if (str[i] == ')')
+				if (str[i] == ')')
 				{
 					S.push(new BracketNode(")"));
 				}
-				else if (_isNumber(str[i])) {
+				else if (static_cast<bool>(_isNumber(str[i]))) {
 					bool check = false;
-					while (_isNumber(str[i]) || isalpha(str[i])) {
-						if (isalpha(str[i]))
+					while (static_cast<bool>(_isNumber(str[i])) || static_cast<bool>(isalpha(str[i]))) {
+						if (static_cast<bool>(isalpha(str[i])))
 						{
 							check = true;
 						}
@@ -146,9 +151,9 @@ int main(int argc, char*argv[]) {
 					}
 					name.clear();
 				}
-				else if (isalpha(str[i]))
+				else if (static_cast<bool>(isalpha(str[i])))
 				{
-					while (isalpha(str[i]) || isdigit(str[i])) {
+					while (static_cast<bool>(isalpha(str[i])) || static_cast<bool>(isdigit(str[i]))) {
 						name += str[i];
 						--i;
 					}
@@ -169,7 +174,9 @@ int main(int argc, char*argv[]) {
 					case _DISP:
 					{
 						left = S.top()->calc();
-						std::string parametr = S.top()->str(); S.pop();
+						std::string parametr = S.top()->str();
+						delete S.top();
+						S.pop();
 						if (parametr == "0")
 						{
 							parametr = "ans";
@@ -189,7 +196,8 @@ int main(int argc, char*argv[]) {
 						{
 							output << "\n]";
 						}
-
+						
+						delete S.top();
 						S.pop();
 
 						output << '\n';
@@ -197,77 +205,114 @@ int main(int argc, char*argv[]) {
 						break;
 					}
 					case _ZEROS:
-						n = S.top()->calc(); S.pop();
-						m = S.top()->calc(); S.pop();
+						n = S.top()->calc(); 
+						delete S.top();
+						S.pop();
+						m = S.top()->calc(); 
+						delete S.top();
+						S.pop();
 
 						zeros(result, n, m);
-
+						
+						delete S.top();
 						S.pop();
 						S.push(new NumNode(result));
 						break;
 					case _ONES:
-						n = static_cast<int>(S.top()->calc()); S.pop();
-						m = static_cast<int>(S.top()->calc()); S.pop();
+						n = static_cast<int>(S.top()->calc());
+						delete S.top();
+						S.pop();
+						m = static_cast<int>(S.top()->calc());
+						delete S.top();
+						S.pop();
 
 						ones(result, n, m);
 
+						delete S.top();
 						S.pop();
 						S.push(new NumNode(result));
 						break;
 					case _EYE:
-						n = static_cast<int>(S.top()->calc()); S.pop();
+						n = static_cast<int>(S.top()->calc());
+						delete S.top();
+						S.pop();
 
 						eye(result, n);
 
+						delete S.top();
 						S.pop();
 						S.push(new NumNode(result));
 						break;
 					case _LINSPACE:
-						x0 = static_cast<int>(S.top()->calc()); S.pop();
-						x1 = static_cast<int>(S.top()->calc()); S.pop();
-						n = static_cast<int>(S.top()->calc()); S.pop();
+						x0 = static_cast<int>(S.top()->calc());
+						delete S.top();
+						S.pop();
+						x1 = static_cast<int>(S.top()->calc());
+						delete S.top();
+						S.pop();
+						n = static_cast<int>(S.top()->calc());
+						delete S.top();
+						S.pop();
 
 						linspace(result, x0, x1, n);
 
+						delete S.top();
 						S.pop();
 						S.push(new NumNode(result));
 						break;
 					case _VERTCAT:
-						left = S.top()->calc(); S.pop();
-						right = S.top()->calc(); S.pop();
+						left = S.top()->calc();
+						delete S.top();
+						S.pop();
+						right = S.top()->calc();
+						delete S.top();
+						S.pop();
 						result = vertcat(left, right);
 						while (true)
 						{
 							if (S.top()->bracket())
 							{
+								delete S.top();
 								S.pop();
 								break;
 							}
-							right = S.top()->calc(); S.pop();
+							right = S.top()->calc();
+							delete S.top();
+							S.pop();
 							result = vertcat(result, right);
 						}
 
 						S.push(new NumNode(result));
 						break;
 					case _HORZCAT:
-						left = S.top()->calc(); S.pop();
-						right = S.top()->calc(); S.pop();
+						left = S.top()->calc();
+						delete S.top();
+						S.pop();
+						right = S.top()->calc();
+						delete S.top();
+						S.pop();
 						result = horzcat(left, right);
 						while (true)
 						{
 							if (S.top()->bracket())
 							{
+								delete S.top();
 								S.pop();
 								break;
 							}
-							right = S.top()->calc(); S.pop();
+							right = S.top()->calc();
+							delete S.top();
+							S.pop();
 							result = horzcat(result, right);
 						}
 
 						S.push(new NumNode(result));
 						break;
 					case _TRANSPOSE:
-						left = S.top()->calc(); S.pop();
+						left = S.top()->calc();
+						delete S.top();
+						S.pop();
+						delete S.top();
 						S.pop();
 						result = transpose(left);
 
@@ -275,55 +320,77 @@ int main(int argc, char*argv[]) {
 						break;
 					case _DET:
 					{
-						left = S.top()->calc(); S.pop();
+						left = S.top()->calc();
+						delete S.top();
+						S.pop();
 						Matrix det_result = det(left);
 
+						delete S.top();
 						S.pop();
 						S.push(new NumNode(det_result));
 						break;
 					}
 					case _INV:
 					{
-						left = S.top()->calc(); S.pop();
+						left = S.top()->calc();
+						delete S.top();
+						S.pop();
 						Matrix inv_result = inv(left);
 
+						delete S.top();
 						S.pop();
 						S.push(new NumNode(inv_result));
 						break;
 					}
 					case _SUM:
 					{
-						left = S.top()->calc(); S.pop();
+						left = S.top()->calc();
+						delete S.top();
+						S.pop();
 						Matrix sum_of_elements = sum(left);
 
+						delete S.top();
 						S.pop();
 						S.push(new NumNode(sum_of_elements));
 						break;
 					}
 					case _PROD:
 					{
-						left = S.top()->calc(); S.pop();
+						left = S.top()->calc();
+						delete S.top();
+						S.pop();
 						Matrix prod_of_elements = prod(left);
 
+						delete S.top();
 						S.pop();
 						S.push(new NumNode(prod_of_elements));
 						break;
 					}
 					case _MAX:
-						left = S.top()->calc(); S.pop();
-						right = S.top()->calc(); S.pop();
+						left = S.top()->calc();
+						delete S.top();
+						S.pop();
+						right = S.top()->calc();
+						delete S.top();
+						S.pop();
 
 						result = max(left, right);
 
+						delete S.top();
 						S.pop();
 						S.push(new NumNode(result));
 						break;
 					case _MIN:
-						left = S.top()->calc(); S.pop();
-						right = S.top()->calc(); S.pop();
+						left = S.top()->calc();
+						delete S.top();
+						S.pop();
+						right = S.top()->calc();
+						delete S.top();
+						S.pop();
 
 						result = min(left, right);
 
+						delete S.top();
 						S.pop();
 						S.push(new NumNode(result));
 						break;
@@ -339,10 +406,14 @@ int main(int argc, char*argv[]) {
 					switch (operand)
 					{
 					case '+':
-						left = S.top()->calc(); S.pop();
+						left = S.top()->calc();
+						delete S.top();
+						S.pop();
 						if (!S.top()->bracket())
 						{
-							right = S.top()->calc(); S.pop();
+							right = S.top()->calc();
+							delete S.top();
+							S.pop();
 							result = left + right;
 						}
 						else {
@@ -351,15 +422,20 @@ int main(int argc, char*argv[]) {
 
 						if (!S.empty())
 						{
+							delete S.top();
 							S.pop();
 						}
 						S.push(new NumNode(result));
 						break;
 					case '-':
-						left = S.top()->calc(); S.pop();
+						left = S.top()->calc();
+						delete S.top();
+						S.pop();
 						if (!S.top()->bracket())
 						{
-							right = S.top()->calc(); S.pop();
+							right = S.top()->calc();
+							delete S.top();
+							S.pop();
 							result = left - right;
 						}
 						else {
@@ -368,13 +444,18 @@ int main(int argc, char*argv[]) {
 
 						if (!S.empty())
 						{
+							delete S.top();
 							S.pop();
 						}
 						S.push(new NumNode(result));
 						break;
 					case '*':
-						left = S.top()->calc(); S.pop();
-						right = S.top()->calc(); S.pop();
+						left = S.top()->calc();
+						delete S.top();
+						S.pop();
+						right = S.top()->calc();
+						delete S.top();
+						S.pop();
 						if (str[i - 1] == '.' || ((left.n_ == 1 && left.m_ == 1) || (right.n_ == 1 && right.m_ == 1)))
 						{
 							i -= 1;
@@ -386,13 +467,18 @@ int main(int argc, char*argv[]) {
 
 						if (!S.empty())
 						{
+							delete S.top();
 							S.pop();
 						}
 						S.push(new NumNode(result));
 						break;
 					case '/':
-						left = S.top()->calc(); S.pop();
-						right = S.top()->calc(); S.pop();
+						left = S.top()->calc();
+						delete S.top();
+						S.pop();
+						right = S.top()->calc();
+						delete S.top();
+						S.pop();
 						if (i != 0)
 						{
 							if (str[i - 1] == '.' || ((left.n_ == 1 && left.m_ == 1) || (right.n_ == 1 && right.m_ == 1)))
@@ -410,14 +496,19 @@ int main(int argc, char*argv[]) {
 
 						if (!S.empty())
 						{
+							delete S.top();
 							S.pop();
 						}
 						S.push(new NumNode(result));
 						break;
 					case '=':
 					{
-						std::string parametr = S.top()->str(); S.pop();
-						left = S.top()->calc(); S.pop();
+						std::string parametr = S.top()->str();
+						delete S.top();
+						S.pop();
+						left = S.top()->calc();
+						delete S.top();
+						S.pop();
 						global::Workspace[parametr] = left;
 						break;
 					}
@@ -436,11 +527,22 @@ int main(int argc, char*argv[]) {
 			++count_string;
 		}
 		catch (...) {
+			while (!S.empty())
+			{
+				delete S.top();
+				S.pop();
+			}
+			input.close();
+			output.close();
 			throw "error in line: " + std::to_string(count_string + 1);
 		}
 	}
 	
-	
+	while (!S.empty())
+	{
+		delete S.top();
+		S.pop();
+	}
 	input.close();
 	output.close();
 	return 0;
