@@ -1,0 +1,732 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/><title>Реализация КА для регулярного языка</title><style>
+/* cspell:disable-file */
+/* webkit printing magic: print all background colors */
+html {
+	-webkit-print-color-adjust: exact;
+}
+* {
+	box-sizing: border-box;
+	-webkit-print-color-adjust: exact;
+}
+
+html,
+body {
+	margin: 0;
+	padding: 0;
+}
+@media only screen {
+	body {
+		margin: 2em auto;
+		max-width: 900px;
+		color: rgb(55, 53, 47);
+	}
+}
+
+body {
+	line-height: 1.5;
+	white-space: pre-wrap;
+}
+
+a,
+a.visited {
+	color: inherit;
+	text-decoration: underline;
+}
+
+.pdf-relative-link-path {
+	font-size: 80%;
+	color: #444;
+}
+
+h1,
+h2,
+h3 {
+	letter-spacing: -0.01em;
+	line-height: 1.2;
+	font-weight: 600;
+	margin-bottom: 0;
+}
+
+.page-title {
+	font-size: 2.5rem;
+	font-weight: 700;
+	margin-top: 0;
+	margin-bottom: 0.75em;
+}
+
+h1 {
+	font-size: 1.875rem;
+	margin-top: 1.875rem;
+}
+
+h2 {
+	font-size: 1.5rem;
+	margin-top: 1.5rem;
+}
+
+h3 {
+	font-size: 1.25rem;
+	margin-top: 1.25rem;
+}
+
+.source {
+	border: 1px solid #ddd;
+	border-radius: 3px;
+	padding: 1.5em;
+	word-break: break-all;
+}
+
+.callout {
+	border-radius: 3px;
+	padding: 1rem;
+}
+
+figure {
+	margin: 1.25em 0;
+	page-break-inside: avoid;
+}
+
+figcaption {
+	opacity: 0.5;
+	font-size: 85%;
+	margin-top: 0.5em;
+}
+
+mark {
+	background-color: transparent;
+}
+
+.indented {
+	padding-left: 1.5em;
+}
+
+hr {
+	background: transparent;
+	display: block;
+	width: 100%;
+	height: 1px;
+	visibility: visible;
+	border: none;
+	border-bottom: 1px solid rgba(55, 53, 47, 0.09);
+}
+
+img {
+	max-width: 100%;
+}
+
+@media only print {
+	img {
+		max-height: 100vh;
+		object-fit: contain;
+	}
+}
+
+@page {
+	margin: 1in;
+}
+
+.collection-content {
+	font-size: 0.875rem;
+}
+
+.column-list {
+	display: flex;
+	justify-content: space-between;
+}
+
+.column {
+	padding: 0 1em;
+}
+
+.column:first-child {
+	padding-left: 0;
+}
+
+.column:last-child {
+	padding-right: 0;
+}
+
+.table_of_contents-item {
+	display: block;
+	font-size: 0.875rem;
+	line-height: 1.3;
+	padding: 0.125rem;
+}
+
+.table_of_contents-indent-1 {
+	margin-left: 1.5rem;
+}
+
+.table_of_contents-indent-2 {
+	margin-left: 3rem;
+}
+
+.table_of_contents-indent-3 {
+	margin-left: 4.5rem;
+}
+
+.table_of_contents-link {
+	text-decoration: none;
+	opacity: 0.7;
+	border-bottom: 1px solid rgba(55, 53, 47, 0.18);
+}
+
+table,
+th,
+td {
+	border: 1px solid rgba(55, 53, 47, 0.09);
+	border-collapse: collapse;
+}
+
+table {
+	border-left: none;
+	border-right: none;
+}
+
+th,
+td {
+	font-weight: normal;
+	padding: 0.25em 0.5em;
+	line-height: 1.5;
+	min-height: 1.5em;
+	text-align: left;
+}
+
+th {
+	color: rgba(55, 53, 47, 0.6);
+}
+
+ol,
+ul {
+	margin: 0;
+	margin-block-start: 0.6em;
+	margin-block-end: 0.6em;
+}
+
+li > ol:first-child,
+li > ul:first-child {
+	margin-block-start: 0.6em;
+}
+
+ul > li {
+	list-style: disc;
+}
+
+ul.to-do-list {
+	padding-inline-start: 0;
+}
+
+ul.to-do-list > li {
+	list-style: none;
+}
+
+.to-do-children-checked {
+	text-decoration: line-through;
+	opacity: 0.375;
+}
+
+ul.toggle > li {
+	list-style: none;
+}
+
+ul {
+	padding-inline-start: 1.7em;
+}
+
+ul > li {
+	padding-left: 0.1em;
+}
+
+ol {
+	padding-inline-start: 1.6em;
+}
+
+ol > li {
+	padding-left: 0.2em;
+}
+
+.mono ol {
+	padding-inline-start: 2em;
+}
+
+.mono ol > li {
+	text-indent: -0.4em;
+}
+
+.toggle {
+	padding-inline-start: 0em;
+	list-style-type: none;
+}
+
+/* Indent toggle children */
+.toggle > li > details {
+	padding-left: 1.7em;
+}
+
+.toggle > li > details > summary {
+	margin-left: -1.1em;
+}
+
+.selected-value {
+	display: inline-block;
+	padding: 0 0.5em;
+	background: rgba(206, 205, 202, 0.5);
+	border-radius: 3px;
+	margin-right: 0.5em;
+	margin-top: 0.3em;
+	margin-bottom: 0.3em;
+	white-space: nowrap;
+}
+
+.collection-title {
+	display: inline-block;
+	margin-right: 1em;
+}
+
+.page-description {
+    margin-bottom: 2em;
+}
+
+.simple-table {
+	margin-top: 1em;
+	font-size: 0.875rem;
+	empty-cells: show;
+}
+.simple-table td {
+	height: 29px;
+	min-width: 120px;
+}
+
+.simple-table th {
+	height: 29px;
+	min-width: 120px;
+}
+
+.simple-table-header-color {
+	background: rgb(247, 246, 243);
+	color: black;
+}
+.simple-table-header {
+	font-weight: 500;
+}
+
+time {
+	opacity: 0.5;
+}
+
+.icon {
+	display: inline-block;
+	max-width: 1.2em;
+	max-height: 1.2em;
+	text-decoration: none;
+	vertical-align: text-bottom;
+	margin-right: 0.5em;
+}
+
+img.icon {
+	border-radius: 3px;
+}
+
+.user-icon {
+	width: 1.5em;
+	height: 1.5em;
+	border-radius: 100%;
+	margin-right: 0.5rem;
+}
+
+.user-icon-inner {
+	font-size: 0.8em;
+}
+
+.text-icon {
+	border: 1px solid #000;
+	text-align: center;
+}
+
+.page-cover-image {
+	display: block;
+	object-fit: cover;
+	width: 100%;
+	max-height: 30vh;
+}
+
+.page-header-icon {
+	font-size: 3rem;
+	margin-bottom: 1rem;
+}
+
+.page-header-icon-with-cover {
+	margin-top: -0.72em;
+	margin-left: 0.07em;
+}
+
+.page-header-icon img {
+	border-radius: 3px;
+}
+
+.link-to-page {
+	margin: 1em 0;
+	padding: 0;
+	border: none;
+	font-weight: 500;
+}
+
+p > .user {
+	opacity: 0.5;
+}
+
+td > .user,
+td > time {
+	white-space: nowrap;
+}
+
+input[type="checkbox"] {
+	transform: scale(1.5);
+	margin-right: 0.6em;
+	vertical-align: middle;
+}
+
+p {
+	margin-top: 0.5em;
+	margin-bottom: 0.5em;
+}
+
+.image {
+	border: none;
+	margin: 1.5em 0;
+	padding: 0;
+	border-radius: 0;
+	text-align: center;
+}
+
+.code,
+code {
+	background: rgba(135, 131, 120, 0.15);
+	border-radius: 3px;
+	padding: 0.2em 0.4em;
+	border-radius: 3px;
+	font-size: 85%;
+	tab-size: 2;
+}
+
+code {
+	color: #eb5757;
+}
+
+.code {
+	padding: 1.5em 1em;
+}
+
+.code-wrap {
+	white-space: pre-wrap;
+	word-break: break-all;
+}
+
+.code > code {
+	background: none;
+	padding: 0;
+	font-size: 100%;
+	color: inherit;
+}
+
+blockquote {
+	font-size: 1.25em;
+	margin: 1em 0;
+	padding-left: 1em;
+	border-left: 3px solid rgb(55, 53, 47);
+}
+
+.bookmark {
+	text-decoration: none;
+	max-height: 8em;
+	padding: 0;
+	display: flex;
+	width: 100%;
+	align-items: stretch;
+}
+
+.bookmark-title {
+	font-size: 0.85em;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	height: 1.75em;
+	white-space: nowrap;
+}
+
+.bookmark-text {
+	display: flex;
+	flex-direction: column;
+}
+
+.bookmark-info {
+	flex: 4 1 180px;
+	padding: 12px 14px 14px;
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+}
+
+.bookmark-image {
+	width: 33%;
+	flex: 1 1 180px;
+	display: block;
+	position: relative;
+	object-fit: cover;
+	border-radius: 1px;
+}
+
+.bookmark-description {
+	color: rgba(55, 53, 47, 0.6);
+	font-size: 0.75em;
+	overflow: hidden;
+	max-height: 4.5em;
+	word-break: break-word;
+}
+
+.bookmark-href {
+	font-size: 0.75em;
+	margin-top: 0.25em;
+}
+
+.sans { font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol"; }
+.code { font-family: "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace; }
+.serif { font-family: Lyon-Text, Georgia, ui-serif, serif; }
+.mono { font-family: iawriter-mono, Nitti, Menlo, Courier, monospace; }
+.pdf .sans { font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol", 'Twemoji', 'Noto Color Emoji', 'Noto Sans CJK JP'; }
+.pdf:lang(zh-CN) .sans { font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol", 'Twemoji', 'Noto Color Emoji', 'Noto Sans CJK SC'; }
+.pdf:lang(zh-TW) .sans { font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol", 'Twemoji', 'Noto Color Emoji', 'Noto Sans CJK TC'; }
+.pdf:lang(ko-KR) .sans { font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol", 'Twemoji', 'Noto Color Emoji', 'Noto Sans CJK KR'; }
+.pdf .code { font-family: Source Code Pro, "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK JP'; }
+.pdf:lang(zh-CN) .code { font-family: Source Code Pro, "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK SC'; }
+.pdf:lang(zh-TW) .code { font-family: Source Code Pro, "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK TC'; }
+.pdf:lang(ko-KR) .code { font-family: Source Code Pro, "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK KR'; }
+.pdf .serif { font-family: PT Serif, Lyon-Text, Georgia, ui-serif, serif, 'Twemoji', 'Noto Color Emoji', 'Noto Serif CJK JP'; }
+.pdf:lang(zh-CN) .serif { font-family: PT Serif, Lyon-Text, Georgia, ui-serif, serif, 'Twemoji', 'Noto Color Emoji', 'Noto Serif CJK SC'; }
+.pdf:lang(zh-TW) .serif { font-family: PT Serif, Lyon-Text, Georgia, ui-serif, serif, 'Twemoji', 'Noto Color Emoji', 'Noto Serif CJK TC'; }
+.pdf:lang(ko-KR) .serif { font-family: PT Serif, Lyon-Text, Georgia, ui-serif, serif, 'Twemoji', 'Noto Color Emoji', 'Noto Serif CJK KR'; }
+.pdf .mono { font-family: PT Mono, iawriter-mono, Nitti, Menlo, Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK JP'; }
+.pdf:lang(zh-CN) .mono { font-family: PT Mono, iawriter-mono, Nitti, Menlo, Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK SC'; }
+.pdf:lang(zh-TW) .mono { font-family: PT Mono, iawriter-mono, Nitti, Menlo, Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK TC'; }
+.pdf:lang(ko-KR) .mono { font-family: PT Mono, iawriter-mono, Nitti, Menlo, Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK KR'; }
+.highlight-default {
+	color: rgba(55, 53, 47, 1);
+}
+.highlight-gray {
+	color: rgba(120, 119, 116, 1);
+	fill: rgba(120, 119, 116, 1);
+}
+.highlight-brown {
+	color: rgba(159, 107, 83, 1);
+	fill: rgba(159, 107, 83, 1);
+}
+.highlight-orange {
+	color: rgba(217, 115, 13, 1);
+	fill: rgba(217, 115, 13, 1);
+}
+.highlight-yellow {
+	color: rgba(203, 145, 47, 1);
+	fill: rgba(203, 145, 47, 1);
+}
+.highlight-teal {
+	color: rgba(68, 131, 97, 1);
+	fill: rgba(68, 131, 97, 1);
+}
+.highlight-blue {
+	color: rgba(51, 126, 169, 1);
+	fill: rgba(51, 126, 169, 1);
+}
+.highlight-purple {
+	color: rgba(144, 101, 176, 1);
+	fill: rgba(144, 101, 176, 1);
+}
+.highlight-pink {
+	color: rgba(193, 76, 138, 1);
+	fill: rgba(193, 76, 138, 1);
+}
+.highlight-red {
+	color: rgba(212, 76, 71, 1);
+	fill: rgba(212, 76, 71, 1);
+}
+.highlight-gray_background {
+	background: rgba(241, 241, 239, 1);
+}
+.highlight-brown_background {
+	background: rgba(244, 238, 238, 1);
+}
+.highlight-orange_background {
+	background: rgba(251, 236, 221, 1);
+}
+.highlight-yellow_background {
+	background: rgba(251, 243, 219, 1);
+}
+.highlight-teal_background {
+	background: rgba(237, 243, 236, 1);
+}
+.highlight-blue_background {
+	background: rgba(231, 243, 248, 1);
+}
+.highlight-purple_background {
+	background: rgba(244, 240, 247, 0.8);
+}
+.highlight-pink_background {
+	background: rgba(249, 238, 243, 0.8);
+}
+.highlight-red_background {
+	background: rgba(253, 235, 236, 1);
+}
+.block-color-default {
+	color: inherit;
+	fill: inherit;
+}
+.block-color-gray {
+	color: rgba(120, 119, 116, 1);
+	fill: rgba(120, 119, 116, 1);
+}
+.block-color-brown {
+	color: rgba(159, 107, 83, 1);
+	fill: rgba(159, 107, 83, 1);
+}
+.block-color-orange {
+	color: rgba(217, 115, 13, 1);
+	fill: rgba(217, 115, 13, 1);
+}
+.block-color-yellow {
+	color: rgba(203, 145, 47, 1);
+	fill: rgba(203, 145, 47, 1);
+}
+.block-color-teal {
+	color: rgba(68, 131, 97, 1);
+	fill: rgba(68, 131, 97, 1);
+}
+.block-color-blue {
+	color: rgba(51, 126, 169, 1);
+	fill: rgba(51, 126, 169, 1);
+}
+.block-color-purple {
+	color: rgba(144, 101, 176, 1);
+	fill: rgba(144, 101, 176, 1);
+}
+.block-color-pink {
+	color: rgba(193, 76, 138, 1);
+	fill: rgba(193, 76, 138, 1);
+}
+.block-color-red {
+	color: rgba(212, 76, 71, 1);
+	fill: rgba(212, 76, 71, 1);
+}
+.block-color-gray_background {
+	background: rgba(241, 241, 239, 1);
+}
+.block-color-brown_background {
+	background: rgba(244, 238, 238, 1);
+}
+.block-color-orange_background {
+	background: rgba(251, 236, 221, 1);
+}
+.block-color-yellow_background {
+	background: rgba(251, 243, 219, 1);
+}
+.block-color-teal_background {
+	background: rgba(237, 243, 236, 1);
+}
+.block-color-blue_background {
+	background: rgba(231, 243, 248, 1);
+}
+.block-color-purple_background {
+	background: rgba(244, 240, 247, 0.8);
+}
+.block-color-pink_background {
+	background: rgba(249, 238, 243, 0.8);
+}
+.block-color-red_background {
+	background: rgba(253, 235, 236, 1);
+}
+.select-value-color-interactiveBlue { background-color: rgba(35, 131, 226, .07); }
+.select-value-color-pink { background-color: rgba(245, 224, 233, 1); }
+.select-value-color-purple { background-color: rgba(232, 222, 238, 1); }
+.select-value-color-green { background-color: rgba(219, 237, 219, 1); }
+.select-value-color-gray { background-color: rgba(227, 226, 224, 1); }
+.select-value-color-translucentGray { background-color: rgba(255, 255, 255, 0.0375); }
+.select-value-color-orange { background-color: rgba(250, 222, 201, 1); }
+.select-value-color-brown { background-color: rgba(238, 224, 218, 1); }
+.select-value-color-red { background-color: rgba(255, 226, 221, 1); }
+.select-value-color-yellow { background-color: rgba(253, 236, 200, 1); }
+.select-value-color-blue { background-color: rgba(211, 229, 239, 1); }
+.select-value-color-pageGlass { background-color: undefined; }
+.select-value-color-washGlass { background-color: undefined; }
+
+.checkbox {
+	display: inline-flex;
+	vertical-align: text-bottom;
+	width: 16;
+	height: 16;
+	background-size: 16px;
+	margin-left: 2px;
+	margin-right: 5px;
+}
+
+.checkbox-on {
+	background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2016%2016%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%0A%3Crect%20width%3D%2216%22%20height%3D%2216%22%20fill%3D%22%2358A9D7%22%2F%3E%0A%3Cpath%20d%3D%22M6.71429%2012.2852L14%204.9995L12.7143%203.71436L6.71429%209.71378L3.28571%206.2831L2%207.57092L6.71429%2012.2852Z%22%20fill%3D%22white%22%2F%3E%0A%3C%2Fsvg%3E");
+}
+
+.checkbox-off {
+	background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2016%2016%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%0A%3Crect%20x%3D%220.75%22%20y%3D%220.75%22%20width%3D%2214.5%22%20height%3D%2214.5%22%20fill%3D%22white%22%20stroke%3D%22%2336352F%22%20stroke-width%3D%221.5%22%2F%3E%0A%3C%2Fsvg%3E");
+}
+	
+</style></head><body><article id="9df1a2c5-a874-47ce-9d6a-9875c9183c53" class="page sans"><header><h1 class="page-title"><strong>Реализация КА для регулярного языка</strong></h1><p class="page-description"></p></header><div class="page-body"><p id="0fe0b302-ed4d-457b-9baa-7f3da19eaa0a" class=""><strong>Кручинин Евгений Владимирович </strong></p><p id="fafd9d10-70f2-4fe0-b4ef-6cc50fc16e1c" class=""><strong>22.Б12-пу</strong></p><p id="61066e22-c2e4-4917-a195-5fe02becb4d7" class="">
+</p><p id="fd26bd7b-d45b-4962-bad7-d91985fdd0d1" class=""><span style="border-bottom:0.05em solid"><strong>Задание:</strong></span> Разработать распознающий КА для цепочек начинающихся с префикса ~  и заканчивающихся суффиксом ~, между которыми располагается чётное число подряд идущих a, за которыми следует один символ b, или нечетное число подряд идущих a, за которыми следует два символа b.</p><p id="55b99ae4-efb6-4b77-aee6-3acb1b15dfee" class=""><span style="border-bottom:0.05em solid"><strong>Диаграмма переходов:</strong></span></p><figure id="9b3e887e-7fbc-4f8f-8423-170b9db8a426" class="image"><a href="%D0%A0%D0%B5%D0%B0%D0%BB%D0%B8%D0%B7%D0%B0%D1%86%D0%B8%D1%8F%20%D0%9A%D0%90%20%D0%B4%D0%BB%D1%8F%20%D1%80%D0%B5%D0%B3%D1%83%D0%BB%D1%8F%D1%80%D0%BD%D0%BE%D0%B3%D0%BE%20%D1%8F%D0%B7%D1%8B%D0%BA%D0%B0%209df1a2c5a87447ce9d6a9875c9183c53/Untitled.png"><img style="width:864px" src="%D0%A0%D0%B5%D0%B0%D0%BB%D0%B8%D0%B7%D0%B0%D1%86%D0%B8%D1%8F%20%D0%9A%D0%90%20%D0%B4%D0%BB%D1%8F%20%D1%80%D0%B5%D0%B3%D1%83%D0%BB%D1%8F%D1%80%D0%BD%D0%BE%D0%B3%D0%BE%20%D1%8F%D0%B7%D1%8B%D0%BA%D0%B0%209df1a2c5a87447ce9d6a9875c9183c53/Untitled.png"/></a></figure><p id="9f80c963-8af6-4a3e-bf31-c31fccad612a" class=""><span style="border-bottom:0.05em solid"><strong>Таблица переходов:</strong></span></p><table id="0a948a9c-a32a-4a05-88c9-53def6a8988c" class="simple-table"><thead class="simple-table-header"><tr id="5b9621cd-3245-451e-88a1-4563482c3ea6"><th id="tIv:" class="simple-table-header-color simple-table-header"></th><th id="KvfX" class="simple-table-header-color simple-table-header">            ~</th><th id="O]fR" class="simple-table-header-color simple-table-header">            a</th><th id="bHjC" class="simple-table-header-color simple-table-header">            b</th></tr></thead><tbody><tr id="15c3f8bd-f731-4be9-998f-4ed9724c45c5"><th id="tIv:" class="simple-table-header-color simple-table-header">→q0</th><td id="KvfX" class="">q1</td><td id="O]fR" class=""><style>@import url('https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.13.2/katex.min.css')</style><span data-token-index="0" contenteditable="false" class="notion-text-equation-token" style="user-select:all;-webkit-user-select:all;-moz-user-select:all"><span></span><span><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi mathvariant="normal">∅</mi></mrow><annotation encoding="application/x-tex">\varnothing</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.66334em;vertical-align:-0.08167em;"></span><span class="mord amsrm">∅</span></span></span></span></span><span>﻿</span></span></td><td id="bHjC" class=""><style>@import url('https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.13.2/katex.min.css')</style><span data-token-index="0" contenteditable="false" class="notion-text-equation-token" style="user-select:all;-webkit-user-select:all;-moz-user-select:all"><span></span><span><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi mathvariant="normal">∅</mi></mrow><annotation encoding="application/x-tex">\varnothing</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.66334em;vertical-align:-0.08167em;"></span><span class="mord amsrm">∅</span></span></span></span></span><span>﻿</span></span></td></tr><tr id="5b129fdd-4a37-40dc-b5e3-d7992ad121ec"><th id="tIv:" class="simple-table-header-color simple-table-header">q1</th><td id="KvfX" class="">q6</td><td id="O]fR" class="">q2</td><td id="bHjC" class=""><style>@import url('https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.13.2/katex.min.css')</style><span data-token-index="0" contenteditable="false" class="notion-text-equation-token" style="user-select:all;-webkit-user-select:all;-moz-user-select:all"><span></span><span><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi mathvariant="normal">∅</mi></mrow><annotation encoding="application/x-tex">\varnothing</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.66334em;vertical-align:-0.08167em;"></span><span class="mord amsrm">∅</span></span></span></span></span><span>﻿</span></span></td></tr><tr id="dec7f535-e529-483c-b889-972128d31359"><th id="tIv:" class="simple-table-header-color simple-table-header">q2</th><td id="KvfX" class=""><style>@import url('https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.13.2/katex.min.css')</style><span data-token-index="0" contenteditable="false" class="notion-text-equation-token" style="user-select:all;-webkit-user-select:all;-moz-user-select:all"><span></span><span><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi mathvariant="normal">∅</mi></mrow><annotation encoding="application/x-tex">\varnothing</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.66334em;vertical-align:-0.08167em;"></span><span class="mord amsrm">∅</span></span></span></span></span><span>﻿</span></span></td><td id="O]fR" class="">q3</td><td id="bHjC" class="">q4</td></tr><tr id="6439588a-467b-4ee7-8876-a8f87c6fd84a"><th id="tIv:" class="simple-table-header-color simple-table-header">q3</th><td id="KvfX" class=""><style>@import url('https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.13.2/katex.min.css')</style><span data-token-index="0" contenteditable="false" class="notion-text-equation-token" style="user-select:all;-webkit-user-select:all;-moz-user-select:all"><span></span><span><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi mathvariant="normal">∅</mi></mrow><annotation encoding="application/x-tex">\varnothing</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.66334em;vertical-align:-0.08167em;"></span><span class="mord amsrm">∅</span></span></span></span></span><span>﻿</span></span></td><td id="O]fR" class="">q2</td><td id="bHjC" class="">q5</td></tr><tr id="2ff2cbb9-7d38-4d0a-8ede-39cf8b8146c4"><th id="tIv:" class="simple-table-header-color simple-table-header">q4</th><td id="KvfX" class=""><style>@import url('https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.13.2/katex.min.css')</style><span data-token-index="0" contenteditable="false" class="notion-text-equation-token" style="user-select:all;-webkit-user-select:all;-moz-user-select:all"><span></span><span><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi mathvariant="normal">∅</mi></mrow><annotation encoding="application/x-tex">\varnothing</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.66334em;vertical-align:-0.08167em;"></span><span class="mord amsrm">∅</span></span></span></span></span><span>﻿</span></span></td><td id="O]fR" class=""><style>@import url('https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.13.2/katex.min.css')</style><span data-token-index="0" contenteditable="false" class="notion-text-equation-token" style="user-select:all;-webkit-user-select:all;-moz-user-select:all"><span></span><span><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi mathvariant="normal">∅</mi></mrow><annotation encoding="application/x-tex">\varnothing</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.66334em;vertical-align:-0.08167em;"></span><span class="mord amsrm">∅</span></span></span></span></span><span>﻿</span></span></td><td id="bHjC" class="">q1</td></tr><tr id="3ae6a29b-c599-430f-8105-2edcf324988f"><th id="tIv:" class="simple-table-header-color simple-table-header">q5</th><td id="KvfX" class="">q6</td><td id="O]fR" class="">q2</td><td id="bHjC" class=""><style>@import url('https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.13.2/katex.min.css')</style><span data-token-index="0" contenteditable="false" class="notion-text-equation-token" style="user-select:all;-webkit-user-select:all;-moz-user-select:all"><span></span><span><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi mathvariant="normal">∅</mi></mrow><annotation encoding="application/x-tex">\varnothing</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.66334em;vertical-align:-0.08167em;"></span><span class="mord amsrm">∅</span></span></span></span></span><span>﻿</span></span></td></tr><tr id="338a5e87-4263-4b2b-8815-1609b36b8e1b"><th id="tIv:" class="simple-table-header-color simple-table-header">*q6</th><td id="KvfX" class=""><style>@import url('https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.13.2/katex.min.css')</style><span data-token-index="0" contenteditable="false" class="notion-text-equation-token" style="user-select:all;-webkit-user-select:all;-moz-user-select:all"><span></span><span><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi mathvariant="normal">∅</mi></mrow><annotation encoding="application/x-tex">\varnothing</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.66334em;vertical-align:-0.08167em;"></span><span class="mord amsrm">∅</span></span></span></span></span><span>﻿</span></span></td><td id="O]fR" class=""><style>@import url('https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.13.2/katex.min.css')</style><span data-token-index="0" contenteditable="false" class="notion-text-equation-token" style="user-select:all;-webkit-user-select:all;-moz-user-select:all"><span></span><span><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi mathvariant="normal">∅</mi></mrow><annotation encoding="application/x-tex">\varnothing</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.66334em;vertical-align:-0.08167em;"></span><span class="mord amsrm">∅</span></span></span></span></span><span>﻿</span></span></td><td id="bHjC" class=""><style>@import url('https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.13.2/katex.min.css')</style><span data-token-index="0" contenteditable="false" class="notion-text-equation-token" style="user-select:all;-webkit-user-select:all;-moz-user-select:all"><span></span><span><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi mathvariant="normal">∅</mi></mrow><annotation encoding="application/x-tex">\varnothing</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.66334em;vertical-align:-0.08167em;"></span><span class="mord amsrm">∅</span></span></span></span></span><span>﻿</span></span></td></tr><tr id="cb74ea30-9dfc-4583-8b1d-1a17b8fb3d29"><th id="tIv:" class="simple-table-header-color simple-table-header"><style>@import url('https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.13.2/katex.min.css')</style><span data-token-index="0" contenteditable="false" class="notion-text-equation-token" style="user-select:all;-webkit-user-select:all;-moz-user-select:all"><span></span><span><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi mathvariant="normal">∅</mi></mrow><annotation encoding="application/x-tex">\varnothing</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.66334em;vertical-align:-0.08167em;"></span><span class="mord amsrm">∅</span></span></span></span></span><span>﻿</span></span></th><td id="KvfX" class=""><style>@import url('https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.13.2/katex.min.css')</style><span data-token-index="0" contenteditable="false" class="notion-text-equation-token" style="user-select:all;-webkit-user-select:all;-moz-user-select:all"><span></span><span><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi mathvariant="normal">∅</mi></mrow><annotation encoding="application/x-tex">\varnothing</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.66334em;vertical-align:-0.08167em;"></span><span class="mord amsrm">∅</span></span></span></span></span><span>﻿</span></span></td><td id="O]fR" class=""><style>@import url('https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.13.2/katex.min.css')</style><span data-token-index="0" contenteditable="false" class="notion-text-equation-token" style="user-select:all;-webkit-user-select:all;-moz-user-select:all"><span></span><span><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi mathvariant="normal">∅</mi></mrow><annotation encoding="application/x-tex">\varnothing</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.66334em;vertical-align:-0.08167em;"></span><span class="mord amsrm">∅</span></span></span></span></span><span>﻿</span></span></td><td id="bHjC" class=""><style>@import url('https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.13.2/katex.min.css')</style><span data-token-index="0" contenteditable="false" class="notion-text-equation-token" style="user-select:all;-webkit-user-select:all;-moz-user-select:all"><span></span><span><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi mathvariant="normal">∅</mi></mrow><annotation encoding="application/x-tex">\varnothing</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.66334em;vertical-align:-0.08167em;"></span><span class="mord amsrm">∅</span></span></span></span></span><span>﻿</span></span></td></tr></tbody></table><p id="f8757525-e4f8-4cf6-a927-29f3e638f5d6" class=""><span style="border-bottom:0.05em solid"><strong>Регулярное выражение:</strong></span></p><figure class="block-color-gray_background callout" style="white-space:pre-wrap;display:flex" id="959e8826-ef96-4016-baa1-1e4c330d21f2"><div style="font-size:1.5em"><span class="icon">📄</span></div><div style="width:100%"><code>~((aa)+b|a+bb)*~</code></div></figure><p id="dedbdd60-875d-4335-80a3-a2e5bb4b23b2" class=""><span style="border-bottom:0.05em solid"><strong>Листинги программ:</strong></span></p><pre id="b534411b-fd79-4201-9bde-ed9405bfef8b" class="code"><code>#include &lt;iostream&gt;
+#include &lt;string&gt;
+
+//Таблица переходов		            ~   a   b
+static const int table[7][3] = { {1, -1, -1}, //q0
+												         {6, 2, -1}, //q1
+																 {-1, 3, 4}, //q2
+											  				 {-1, 2, 5}, //q3
+													 			 {-1, -1, 1}, //q4
+																 {6, 2, -1}, //q5
+																 {-1, -1, -1} }; //*q6
+
+void find(const std::string&amp; str) {
+	bool check = false; //проверяем, что хоть один вход был
+	for (int index = 0; index &lt; str.length(); ++index) //идем циклом по всей строчке
+	{
+		std::string result; //будем записывать сюда подходящую цепочку
+		int ind = index; //заводим еще один индекс, чтобы итерироваться по строке
+		int state = 0; //состояние
+		while (state != -1) //пока не перешли в пустое состояние
+		{
+			//проверяем на нужные символы, иначе ловим else
+			if (str[ind] == &#x27;~&#x27; || str[ind] == &#x27;a&#x27; || str[ind] == &#x27;b&#x27;) 
+				state = table[state][static_cast&lt;int&gt;(str[ind]) % 3]; //задаем состояние
+				result += str[ind]; //добавляем текущий элемент к цепочке
+				++ind; //увеличиваем ind, двигаясь по строчке
+				if (state == 6) //проверяем, что получили может правильную
+				{
+					//выводим индекс первого символа и саму цепочку
+					std::cout &lt;&lt; index + 1 &lt;&lt; &quot;: &quot; &lt;&lt; result &lt;&lt; std::endl;
+					check = true; //хоть одна цепочка есть
+				}
+			}
+			else {
+				state = -1; //переходим в пустое состояние
+			}
+		}
+	}
+
+	//проверка, что могли не найти ни одной цепочки
+	if (!check) {
+		std::cout &lt;&lt; &quot;цепочек не найдено!&quot; &lt;&lt; std::endl;
+	}
+}
+
+int main() {
+	std::string input; //заводим переменную для нашей строки
+
+	std::cout &lt;&lt; &quot;Введите строку:&quot; &lt;&lt; std::endl; //просим пользователя ввести строку
+	std::cin &gt;&gt; input; //принимаем строку
+
+	find(input); //передаем строку на обработку
+
+	return 0;
+}</code></pre><p id="4b7e003e-1d66-498e-93e0-e33b032bbe99" class=""><strong><span style="border-bottom:0.05em solid">Краткое описание работы подпрограммы:</span></strong></p><ul id="fea5afd6-52cb-478d-aa30-34f04a77aebd" class="bulleted-list"><li style="list-style-type:disc">Будем передавать строку в функцию. Введем переменную состояния(0-начальное) и таблицу переходов. Будем идти циклом, пока не кончится строка, и проверять принадлежность. По таблице переходов мы будем менять начальное состояние, которое изначально равно 0. Если получаем состояние 6, то значит перейдем в <code>финальное состояние</code> , после этого у нас выведется индекс первого элемента и сама строка.</li></ul><ul id="df21e49a-7315-4ac6-b0b7-133fb9b80ab7" class="bulleted-list"><li style="list-style-type:disc">При <a href="https://www.notion.so/9df1a2c5a87447ce9d6a9875c9183c53?pvs=21">определение состояния</a> пользуюсь остатком от деления на 3, чтобы итерироваться по столбцам таблицы, значения символов ‘~’ = 126, ‘a’ = 97, ‘b’ = 98, остаток от деления будет соответственно 0, 1, 2. </li></ul><ul id="393756ca-77b0-4758-ac8b-21a99738750a" class="bulleted-list"><li style="list-style-type:disc">Так как нам надо проверить еще, что хоть одна строка была, я использую переменную <a href="https://www.notion.so/9df1a2c5a87447ce9d6a9875c9183c53?pvs=21">check</a>, изначально она false, но при первом же нахождение нужной цепочки она меняется на true. Если за всю строку мы не нашли ни одной нужной цепочки, то будет выведено <code>“цепочек не найдено!”</code></li></ul><p id="44d7a17d-dcde-478a-ae37-67be77da7c86" class=""><span style="border-bottom:0.05em solid"><strong>Таблица тестирования программы:</strong></span></p><table id="b5b4fb43-81c9-4133-986b-1de664abd1e3" class="simple-table"><thead class="simple-table-header"><tr id="62f91878-7dfb-4795-b98b-142baac518ca"><th id="oEMx" class="simple-table-header-color simple-table-header" style="width:64px">Номер теста</th><th id="?|Ib" class="simple-table-header-color simple-table-header">Ввод</th><th id="L^]x" class="simple-table-header-color simple-table-header">Вывод</th></tr></thead><tbody><tr id="e9c0a1ea-070b-477e-97d8-0748d289e902"><th id="oEMx" class="simple-table-header-color simple-table-header" style="width:64px">1.</th><td id="?|Ib" class="">~abbb~</td><td id="L^]x" class="">цепочек не найдено!</td></tr><tr id="bb4db14c-df2e-4c86-8e79-60266886cf63"><th id="oEMx" class="simple-table-header-color simple-table-header" style="width:64px">2.</th><td id="?|Ib" class="">~aabb~</td><td id="L^]x" class="">цепочек не найдено!</td></tr><tr id="12201f2d-a461-4071-b761-d7e9c7c0b20b"><th id="oEMx" class="simple-table-header-color simple-table-header" style="width:64px">3.</th><td id="?|Ib" class="">~abbb~abb~</td><td id="L^]x" class="">6: ~abb~</td></tr><tr id="70fc89bf-fe80-463e-9cf7-bf061a115a7c"><th id="oEMx" class="simple-table-header-color simple-table-header" style="width:64px">4.</th><td id="?|Ib" class="">~abb~</td><td id="L^]x" class="">1: ~abb~</td></tr><tr id="65025db3-f497-4e90-a163-36e9e42d5b87"><th id="oEMx" class="simple-table-header-color simple-table-header" style="width:64px">5.</th><td id="?|Ib" class="">~aab~abb~</td><td id="L^]x" class="">1: ~aab~; 5: ~abb~</td></tr><tr id="84e42ade-15cb-45e2-a606-ab17eaa12a75"><th id="oEMx" class="simple-table-header-color simple-table-header" style="width:64px">6.</th><td id="?|Ib" class="">~abbb~ab~</td><td id="L^]x" class="">цепочек не найдено!</td></tr><tr id="02a81ddf-c1d2-4290-9b50-0d3edd3a7863"><th id="oEMx" class="simple-table-header-color simple-table-header" style="width:64px">7.</th><td id="?|Ib" class="">~a~</td><td id="L^]x" class="">цепочек не найдено!</td></tr><tr id="66abe4e5-7b17-435e-896a-31a1cd1e77d2"><th id="oEMx" class="simple-table-header-color simple-table-header" style="width:64px">8.</th><td id="?|Ib" class="">~abbaab~</td><td id="L^]x" class="">1: ~abbaab~</td></tr><tr id="4bf907a8-e619-442f-bd06-03128e25cbea"><th id="oEMx" class="simple-table-header-color simple-table-header" style="width:64px">9.</th><td id="?|Ib" class="">~abb~abbb~</td><td id="L^]x" class="">1: ~abb~</td></tr><tr id="3f0577f5-0fee-40ba-bd39-afefb7318b1c"><th id="oEMx" class="simple-table-header-color simple-table-header" style="width:64px">10.</th><td id="?|Ib" class="">~abbaab~abb~</td><td id="L^]x" class="">1: ~abbaab~; 8: ~abb~</td></tr><tr id="622f0288-94c7-423b-b26e-20ec649c4fac"><th id="oEMx" class="simple-table-header-color simple-table-header" style="width:64px">11.</th><td id="?|Ib" class="">~b~</td><td id="L^]x" class="">цепочек не найдено!</td></tr><tr id="28f16049-d918-4792-a750-da6dfdd02243"><th id="oEMx" class="simple-table-header-color simple-table-header" style="width:64px">12.</th><td id="?|Ib" class="">~abb~a~</td><td id="L^]x" class="">1: ~abb~</td></tr><tr id="a2eaf48c-9fe0-40b0-865b-a20cc031c69d"><th id="oEMx" class="simple-table-header-color simple-table-header" style="width:64px">13.</th><td id="?|Ib" class="">~aab~b~</td><td id="L^]x" class="">1: ~aab~</td></tr><tr id="d313868c-0347-4c14-a2f5-56c040c4bdf6"><th id="oEMx" class="simple-table-header-color simple-table-header" style="width:64px">14.</th><td id="?|Ib" class="">~abbb~b~</td><td id="L^]x" class="">цепочек не найдено!</td></tr><tr id="78b6c36a-1bfd-4144-9997-2663e3d6adc2"><th id="oEMx" class="simple-table-header-color simple-table-header" style="width:64px">15.</th><td id="?|Ib" class="">~~abb~</td><td id="L^]x" class="">1: ~~; 2: ~abb~</td></tr></tbody></table><p id="978e06ba-697c-4e06-aaa2-4ab160cb3978" class="">
+</p></div></article><span class="sans" style="font-size:14px;padding-top:2em"></span></body></html>
