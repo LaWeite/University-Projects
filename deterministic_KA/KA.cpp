@@ -24,19 +24,9 @@ void find(const std::string& str) {
 				state = table[state][0];
 				break;
 			case 97: //встретили a
-				//проверяем, что мы не зашли сюда после неправильной последовательности
-				/*if (state == 0)
-				{
-					continue;
-				}*/
 				state = table[state][1];
 				break;
 			case 98: //встретили b
-				//проверяем, что мы не зашли сюда после неправильной последовательности
-				/*if (state == 0)
-				{
-					continue;
-				}*/
 				state = table[state][2];
 				break;
 			default: //если встречаем символ не из алфавита
