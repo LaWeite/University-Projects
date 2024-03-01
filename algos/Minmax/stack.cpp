@@ -35,7 +35,3 @@ int Stack::minElement() const {
 bool Stack::isEmpty() const {
     return topIndex_ + 1 == 0;
 }
-
-int Stack::size() const {
-    return topIndex_ + 1;
-}
