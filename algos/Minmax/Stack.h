@@ -19,7 +19,6 @@ public:
     int maxElement() const;
     int minElement() const;
     bool isEmpty() const;
-    int size() const;
 
     ~Stack() {
         if (data_ != nullptr) {
