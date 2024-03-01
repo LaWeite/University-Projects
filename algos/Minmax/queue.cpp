@@ -10,11 +10,6 @@ void Queue::push(int newElement) {
 }
 
 void Queue::pop() {
-    if (first_stack_.size() == 1 && second_stack_.isEmpty())
-    {
-        first_stack_.pop();
-    }
-
     if (second_stack_.isEmpty()) {
         while (!first_stack_.isEmpty()) {
             second_stack_.push(first_stack_.pop());
