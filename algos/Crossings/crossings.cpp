@@ -60,6 +60,8 @@ static unsigned long long merge(Element* array, int left, int mid, int right, bo
         array[i] = temp[k];
     }
 
+    delete[] temp;
+
     return count;
 }
 
