@@ -1,117 +1,74 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
-#include <vector>
 
 struct Node {
     char type;
     unsigned int nodeNumber;
     int numKeys;
-    std::vector<int> keys;
+    int* keys;
     int numChildren;
-    std::vector<unsigned int> children;
+    unsigned int* children;
 
-    Node() : nodeNumber(0), type(' '), numKeys(0), numChildren(0) {}
+    Node() : nodeNumber(0), type(' '), numKeys(0), numChildren(0), keys(nullptr), children(nullptr) {}
+    ~Node() {
+        delete[] keys;
+        delete[] children;
+    }
 };
 
-int getNodeLevel(const std::vector<Node>& nodes, int root, unsigned int targetNode);
-bool checkLeafNodesSameLevel(const std::vector<Node>& nodes, int root);
-
-int getHeight(const std::vector<Node>& nodes, unsigned int currentNodeNumber) {
-    int maxHeight = 0;
-    for (const Node& node : nodes) {
-        if (node.nodeNumber == currentNodeNumber) {
-            if (node.numChildren == 0) {
-                return 1;
-            }
-            else {
-                int maxChildHeight = 0;
-                for (unsigned int childNumber : node.children) {
-                    int childHeight = getHeight(nodes, childNumber);
-                    if (childHeight > maxChildHeight) {
-                        maxChildHeight = childHeight;
-                    }
-                }
-                return 1 + maxChildHeight;
-            }
-        }
-    }
-    return 0;
-}
-
-static bool checkBTreeProperties(const std::vector<Node>& nodes, int t, int root) {
-    int height = getHeight(nodes, root);
-
-    for (const Node& node : nodes) {
-        // Check property 1: Each node, except the root, must have at least t-1 keys
-        if (node.nodeNumber != root && node.numKeys < t - 1) {
-            return false;
-        }
-
-        // Check property 2: Each internal node must have at least t children
-        if (node.type == 'b' && node.numChildren < t && node.nodeNumber != root) {
-            return false;
-        }
-
-        // Check property 3: The root must have at least one key
-        if (node.nodeNumber == root) {
-            if (node.numKeys < 1) {
-                return false;
-            }
-        }
-
-        // Check property 4: Each node, except the root, must have at most 2t-1 keys and 2t children
-        if (node.nodeNumber != root && (node.numKeys > 2 * t - 1 || node.numChildren > 2 * t)) {
-            return false;
-        }
-
-        // Check property 5: The root must have between 1 and 2t-1 keys and between 2 and 2t children for a height greater than 0
-        if (node.nodeNumber == root && (node.numKeys < 1 || node.numKeys > 2 * t - 1 || node.numChildren < 2 || node.numChildren > 2 * t) && height != 1) {
+static bool verifyChildrenKeys(Node* nodes, int numNodes, int index, int left, int right) {
+    for (int i = 0; i < nodes[index].numKeys; ++i)
+    {
+        if (nodes[index].keys[i] < left || nodes[index].keys[i] > right)
+        {
             return false;
         }
     }
 
-    // Check property 6: Validate the key range property within each node
+    if (nodes[index].type == 'l') {
+        return true;
+    }
 
-    // Check property 7: Confirm that all leaf nodes are at the same level
-    if (!checkLeafNodesSameLevel(nodes, root)) {
-        return false;
+    for (int i = 0; i < nodes[index].numChildren; ++i)
+    {
+        int newIndexOfNode = -1;
+        for (int j = 0; j < numNodes; ++j)
+        {
+            if (nodes[j].nodeNumber == nodes[index].children[i])
+            {
+                newIndexOfNode = j;
+                break;
+            }
+        }
+
+        if (newIndexOfNode == -1)
+        {
+            return false;
+        }
+
+        int newLeft = i != 0 ? nodes[index].keys[i - 1] : left;
+        int newRight = i != nodes[index].numChildren - 1 ? nodes[index].keys[i] : right;
+
+        if (!verifyChildrenKeys(nodes, numNodes, newIndexOfNode, newLeft, newRight))
+        {
+            return false;
+        }
     }
     
     return true;
 }
 
-bool checkLeafNodesSameLevel(const std::vector<Node>& nodes, int root) {
-    int leafLevel = -1;
-    bool firstLeafFound = false;
-
-    for (const Node& node : nodes) {
-        if (node.type == 'l') {
-            if (!firstLeafFound) {
-                leafLevel = getNodeLevel(nodes, root, node.nodeNumber);
-                firstLeafFound = true;
-            }
-            else {
-                if (leafLevel != getNodeLevel(nodes, root, node.nodeNumber)) {
-                    return false;
-                }
-            }
-        }
-    }
-
-    return true;
-}
-
-int getNodeLevel(const std::vector<Node>& nodes, int root, unsigned int targetNode) {
+static int getNodeLevel(Node* nodes, int N, int root, unsigned int targetNode) {
     if (root == targetNode) {
         return 0;
     }
 
-    for (const Node& node : nodes) {
-        if (node.nodeNumber == targetNode) {
-            for (unsigned int child : node.children) {
-                int childLevel = getNodeLevel(nodes, root, child);
-                if (childLevel >= 0) {
+    for (int i = 0; i < N; ++i) {
+        if (nodes[i].nodeNumber == targetNode) {
+            for (int j = 0; j < nodes[i].numChildren; ++j) {
+                int childLevel = getNodeLevel(nodes, N, root, nodes[i].children[j]);
+                if (childLevel != -1) {
                     return 1 + childLevel;
                 }
             }
@@ -121,8 +78,74 @@ int getNodeLevel(const std::vector<Node>& nodes, int root, unsigned int targetNo
     return -1;
 }
 
-int main() {
-    std::ifstream inputFile("input.txt");
+static bool checkLeafNodesSameLevel(Node* nodes, int N, int root) {
+    int leafLevel = -1;
+    bool firstLeafFound = false;
+
+    for (int i = 0; i < N; ++i) {
+        if (nodes[i].type == 'l') {
+            if (!firstLeafFound) {
+                leafLevel = getNodeLevel(nodes, N, root, nodes[i].nodeNumber);
+                firstLeafFound = true;
+            }
+            else {
+                if (leafLevel != getNodeLevel(nodes, N, root, nodes[i].nodeNumber)) {
+                    return false;
+                }
+            }
+        }
+    }
+
+    return true;
+}
+
+static bool checkBTreeProperties(Node* nodes, int t, int root, int N) {
+    for (int i = 0; i < N; ++i) {
+        if (nodes[i].nodeNumber != root && nodes[i].numKeys < t - 1) {
+            return false;
+        }
+
+        if (nodes[i].numChildren != nodes[i].numKeys + 1 && nodes[i].type != 'l')
+        {
+            return false;
+        }
+
+        if (nodes[i].type == 'b' && nodes[i].numChildren < t && nodes[i].nodeNumber != root) {
+            return false;
+        }
+
+        if (nodes[i].nodeNumber == root) {
+            if (nodes[i].numKeys < 1) {
+                return false;
+            }
+        }
+
+        if (nodes[i].nodeNumber != root && (nodes[i].numKeys > 2 * t - 1 || nodes[i].numChildren > 2 * t)) {
+            return false;
+        }
+
+        if (nodes[i].nodeNumber == root && (nodes[i].numKeys < 1 || nodes[i].numKeys > 2 * t - 1 || nodes[i].numChildren < 2 || nodes[i].numChildren > 2 * t) && N > 1) {
+            return false;
+        }
+    }
+
+    if (!verifyChildrenKeys(nodes, N, 0, -2147483647, 2147483647)) {
+        return false;
+    }
+
+    if (!checkLeafNodesSameLevel(nodes, N, root)) {
+        return false;
+    }
+    
+    return true;
+}
+
+int main(int argc, char* argv[]) {
+    if (argc != 2) {
+        return 1;
+    }
+
+    std::ifstream inputFile(argv[1]);
     if (!inputFile.is_open()) {
         std::cerr << "Error opening file." << std::endl;
         return 1;
@@ -131,92 +154,115 @@ int main() {
     int N, t, root;
     inputFile >> N >> t >> root;
 
-    std::vector<Node> nodes;
+    Node* nodes = new Node[N];
 
-    std::string line;
     char str[1024];
-    while (inputFile.getline(str, 1024, '\n')) {
-        if (std::strcmp(str, "") == 0)
+    int indexOfNodes = 0;
+    while (inputFile.getline(str, 1024, '\n') && indexOfNodes < N) {
+        if (str[0] == '\0')
         {
             continue;
         }
 
         std::istringstream iss(str);
-        Node node;
 
         char nodeType;
         iss >> nodeType;
 
         if (nodeType == 'l') {
-            node.type = 'l';
+            nodes[indexOfNodes].type = 'l';
 
             iss.ignore(7);
-            iss >> std::dec >> node.nodeNumber;
+            iss >> std::dec >> nodes[indexOfNodes].nodeNumber;
 
             iss.ignore(2);
-            iss >> std::dec >> node.numKeys;
+            iss >> std::dec >> nodes[indexOfNodes].numKeys;
 
             iss.ignore(1);
 
             int key;
-            for (int i = 0; i < node.numKeys; ++i) {
+            int prev = 0;
+            nodes[indexOfNodes].keys = new int[nodes[indexOfNodes].numKeys];
+            for (int i = 0; i < nodes[indexOfNodes].numKeys; ++i) {
                 iss >> std::dec >> key;
-                node.keys.push_back(key);
+                if (i != 0 && prev > key)
+                {
+                    inputFile.close();
+                    std::cout << "no";
+                    delete[] nodes;
+                    return 0;
+                }
+                prev = key;
+                nodes[indexOfNodes].keys[i] = key;
             }
         }
         else if (nodeType == 'b') {
-            node.type = 'b';
+            nodes[indexOfNodes].type = 'b';
 
             iss.ignore(9);
-            iss >> std::dec >> node.nodeNumber;
+            iss >> std::dec >> nodes[indexOfNodes].nodeNumber;
 
             iss.ignore(2);
 
-            iss >> node.numKeys;
+            iss >> nodes[indexOfNodes].numKeys;
 
             iss.ignore(1);
 
             int key;
-            for (int i = 0; i < node.numKeys; ++i) {
+            int prev = 0;
+            nodes[indexOfNodes].keys = new int[nodes[indexOfNodes].numKeys];
+            for (int i = 0; i < nodes[indexOfNodes].numKeys; ++i) {
                 iss >> std::dec >> key;
-                node.keys.push_back(key);
+                if (i != 0 && prev > key)
+                {
+                    inputFile.close();
+                    delete[] nodes;
+                    std::cout << "no";
+                    return 0;
+                }
+                prev = key;
+                nodes[indexOfNodes].keys[i] = key;
             }
 
             iss.ignore(3);
 
-            iss >> node.numChildren;
+            iss >> nodes[indexOfNodes].numChildren;
 
             iss.ignore(1);
 
             unsigned int child;
-            for (int i = 0; i < node.numChildren; ++i) {
+            nodes[indexOfNodes].children = new unsigned int[nodes[indexOfNodes].numChildren];
+            for (int i = 0; i < nodes[indexOfNodes].numChildren; ++i) {
                 iss >> std::dec >> child;
-                node.children.push_back(child);
+                nodes[indexOfNodes].children[i] = child;
             }
         }
 
         iss.ignore(1);
 
         char err[1024];
+        err[0] = ' ';
         iss >> err;
-        if (std::strcmp(err, "") != 0)
+        if (err[0] != ' ')
         {
             inputFile.close();
+            delete[] nodes;
             std::cout << "no";
             return 0;
         }
 
-        nodes.push_back(node);
+        ++indexOfNodes;
     }
 
     inputFile.close();
 
-    if (checkBTreeProperties(nodes, t, root)) {
+    if (checkBTreeProperties(nodes, t, root, N)) {
         std::cout << "yes";
     }
     else {
-        std::cout << "no" << std::endl;
+        std::cout << "no";
     }
 
+    delete[] nodes;
     return 0;
 }
