@@ -1,6 +1,7 @@
 import time
 import random
 import itertools
+import matplotlib.pyplot as plt
 
 
 def lsd_radix_sort(A, m, k):
@@ -144,32 +145,26 @@ def run_scenario(scenario, k_values, m_values, n_values):
 
     # Анализируем зависимости для каждого сценария
     if scenario == "k_fixed":
-        # O(mn)
-        # Смотрим изменение n (при фикс m), и изменение m (при фикс n).
         if len(m_values) > 1:
             compare_ratios(results, scenario, var_param="m")
         if len(n_values) > 1:
             compare_ratios(results, scenario, var_param="n")
 
     elif scenario == "m_fixed":
-        # O(n + k) ~ O(n)
-        # Смотрим изменение n
         compare_ratios(results, scenario, var_param="n")
 
     elif scenario == "both_fixed":
-        # O(n)
-        # Смотрим изменение n
         compare_ratios(results, scenario, var_param="n")
 
     else:
-        # general: O(m(n + k))
-        # Смотрим изменение n, m, k
         if len(n_values) > 1:
             compare_ratios(results, scenario, var_param="n")
         if len(m_values) > 1:
             compare_ratios(results, scenario, var_param="m")
         if len(k_values) > 1:
             compare_ratios(results, scenario, var_param="k")
+
+    return results
 
 
 def run_general_no_fixed(k_values, m_values, n_values):
@@ -204,6 +199,29 @@ def run_general_no_fixed(k_values, m_values, n_values):
         print(f"ratio_real={ratio_real:.4f}, ratio_theor={ratio_theor:.4f}, ratio_real/ratio_theor={ratio_comp:.4f}")
 
 
+def plot_both_fixed(results):
+    # Группируем результаты по (k, m)
+    grouped = {}
+    for (k, m, n), (real_t, theor_t) in results.items():
+        grouped.setdefault((k, m), []).append((n, real_t, theor_t))
+
+    for (k, m), arr in grouped.items():
+        # Сортируем по n
+        arr.sort(key=lambda x: x[0])
+        ns = [x[0] for x in arr]
+        real_times = [x[1] for x in arr]
+
+        plt.figure(figsize=(8, 5))
+        plt.plot(ns, real_times, label='Real time', marker='o')
+
+        plt.xlabel('n')
+        plt.ylabel('Time (s)')
+        plt.title(f'Both Fixed Scenario (k={k}, m={m})')
+        plt.legend()
+        plt.grid(True)
+        plt.show()
+
+
 # Демонстрация всех сценариев:
 # 1. k_fixed: k фиксировано => O(mn)
 print("=== Сценарий k_fixed ===")
@@ -215,12 +233,10 @@ run_scenario("m_fixed", k_values=[3, 6], m_values=[2, 4], n_values=[1000, 2000, 
 
 # 3. both_fixed: m и k фиксированы, => O(n)
 print("\n=== Сценарий both_fixed ===")
-run_scenario("both_fixed", k_values=[3, 6], m_values=[2, 4], n_values=[1000, 2000, 4000])
+results_both_fixed = run_scenario("both_fixed", k_values=[3, 6], m_values=[2, 4], n_values=[1000, 2000, 4000])
 
-# 4. general: все меняется => O(m(n+k))
-print("\n=== Сценарий general ===")
-run_scenario("general", k_values=[3, 6], m_values=[2, 4], n_values=[1000, 2000, 4000])
+# Строим графики
+plot_both_fixed(results_both_fixed)
 
-# Дополнительно - general без фиксации параметров,
-# случайным образом сравниваем пары точек.
+# 4. general
 run_general_no_fixed(k_values=[2, 4, 8], m_values=[1, 2, 3], n_values=[1000, 2000, 4000])
